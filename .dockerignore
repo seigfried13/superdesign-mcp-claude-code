@@ -68,6 +68,5 @@ Thumbs.db
 # Package manager files
 .npm
 .yarn
-package-lock.json
 yarn.lock
 pnpm-lock.yaml

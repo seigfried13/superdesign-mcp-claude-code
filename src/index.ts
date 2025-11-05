@@ -74,7 +74,7 @@ const CheckFilesSchema = z.object({
 
 // Get or create superdesign directory
 function getSuperdeignDirectory(workspacePath?: string): string {
-  const basePath = workspacePath || process.cwd();
+  const basePath = workspacePath || process.env.WORKSPACE_PATH || process.cwd();
   const superdesignDir = path.join(basePath, 'superdesign');
   
   if (!existsSync(superdesignDir)) {
