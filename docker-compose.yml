@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  superdesign-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/jonthebeef/superdesign-mcp-server:latest
+    container_name: superdesign-mcp-server
+
+    # Volume mounts for persistent design storage
+    volumes:
+      # Mount workspace directory for design files
+      - ./superdesign:/workspace/superdesign
+      # Optional: mount custom config
+      # - ./claude-mcp-config.json:/app/claude-mcp-config.json:ro
+
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - WORKSPACE_PATH=/workspace
+
+    # Use stdin/stdout for MCP communication
+    stdin_open: true
+    tty: true
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Live gallery server (if you want to run it separately)
+  superdesign-gallery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/jonthebeef/superdesign-mcp-server:latest
+    container_name: superdesign-gallery
+
+    volumes:
+      - ./superdesign:/workspace/superdesign
+
+    environment:
+      - NODE_ENV=production
+      - GALLERY_PORT=3000
+
+    ports:
+      - "3000:3000"
+
+    # Override command to run gallery server
+    command: ["node", "-e", "require('./dist/index.js')"]
+
+    restart: unless-stopped
+
+    profiles:
+      - gallery
+
+networks:
+  default:
+    name: superdesign-network

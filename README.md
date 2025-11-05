@@ -11,12 +11,60 @@ An MCP (Model Context Protocol) server that brings [Superdesign](https://github.
 
 ## Installation
 
-1. Install dependencies:
+### Option 1: Docker (Recommended)
+
+Pull and run from GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/jonthebeef/superdesign-mcp-claude-code:latest
+
+# Run with docker-compose (easiest)
+docker-compose up -d
+
+# Or run directly
+docker run -i \
+  -v $(pwd)/superdesign:/workspace/superdesign \
+  ghcr.io/jonthebeef/superdesign-mcp-claude-code:latest
+```
+
+**Docker Configuration for Claude Code:**
+
+Add to your `~/.claude-code/mcp-settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "superdesign": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "${workspaceFolder}/superdesign:/workspace/superdesign",
+        "ghcr.io/jonthebeef/superdesign-mcp-claude-code:latest"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+### Option 2: Local Build from Source
+
+1. Clone the repository:
+```bash
+git clone https://github.com/jonthebeef/superdesign-mcp-claude-code.git
+cd superdesign-mcp-claude-code
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Build the server:
+3. Build the server:
 ```bash
 npm run build
 ```
@@ -211,6 +259,108 @@ This addresses the community request for Claude Code API provider support (see [
 | **Claude Code Access** | Manual prompt copying | Direct tool invocation |
 | **API Requirements** | Separate API key needed | Uses Claude Code's existing connection |
 | **User Experience** | Copy/paste workflow | Automated orchestration |
+
+## Docker Deployment
+
+### Building the Docker Image Locally
+
+```bash
+# Build the image
+docker build -t superdesign-mcp-server .
+
+# Run the container
+docker run -i \
+  -v $(pwd)/superdesign:/workspace/superdesign \
+  superdesign-mcp-server
+```
+
+### Using Docker Compose
+
+The repository includes a `docker-compose.yml` for easy local development:
+
+```bash
+# Start the MCP server
+docker-compose up -d
+
+# View logs
+docker-compose logs -f superdesign-mcp
+
+# Stop the server
+docker-compose down
+```
+
+### GitHub Actions CI/CD
+
+The repository includes automated Docker builds via GitHub Actions:
+
+- **Push to `main`**: Builds and publishes to `ghcr.io` with `latest` tag
+- **Semantic version tags** (e.g., `v1.0.0`): Creates versioned releases
+- **Pull requests**: Builds and tests without publishing
+
+**Available Image Tags:**
+- `latest` - Latest stable release from main branch
+- `v1.0.0`, `v1.0`, `v1` - Semantic versioned releases
+- `main-<sha>` - Commit-specific builds
+
+### Multi-Architecture Support
+
+Docker images are built for multiple architectures:
+- `linux/amd64` (Intel/AMD)
+- `linux/arm64` (Apple Silicon, ARM servers)
+
+### Volume Mounts
+
+The Docker container expects the following volume mounts:
+
+- `/workspace/superdesign` - Directory where design files are stored
+  - `design_iterations/` - Generated designs (HTML/SVG)
+  - `design_system/` - Extracted design systems (JSON)
+
+### Environment Variables
+
+Optional environment variables for Docker deployment:
+
+- `NODE_ENV` - Set to `production` (default)
+- `WORKSPACE_PATH` - Workspace directory path (default: `/workspace`)
+
+### Security Features
+
+The Docker image includes:
+- Non-root user (`mcp:mcp`, UID/GID 1001)
+- Minimal Alpine Linux base (~50MB)
+- Multi-stage builds for smaller image size
+- `dumb-init` for proper signal handling
+- Security scanning via Trivy in CI/CD
+
+### Production Deployment
+
+For production deployments, consider:
+
+1. **Volume Persistence**: Ensure design files are persisted
+2. **Resource Limits**: Set CPU/memory limits via Docker
+3. **Health Checks**: Built-in health check every 30s
+4. **Logging**: JSON logging with rotation (10MB, 3 files)
+
+Example production docker-compose:
+
+```yaml
+services:
+  superdesign-mcp:
+    image: ghcr.io/jonthebeef/superdesign-mcp-claude-code:v1.0.0
+    restart: unless-stopped
+    volumes:
+      - ./superdesign:/workspace/superdesign
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
 
 ## License
 
