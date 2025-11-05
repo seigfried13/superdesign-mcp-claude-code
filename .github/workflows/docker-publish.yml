@@ -55,8 +55,9 @@ jobs:
             type=semver,pattern={{major}}
             # Tag with 'latest' for main branch
             type=raw,value=latest,enable={{is_default_branch}}
-            # Tag with short SHA
-            type=sha,prefix={{branch}}-
+            # Tag with short SHA (prefix with branch to avoid hyphen issues)
+            type=sha,prefix={{branch}}-,enable={{is_default_branch}}
+            type=sha,prefix=pr-,enable=${{ github.event_name == 'pull_request' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
